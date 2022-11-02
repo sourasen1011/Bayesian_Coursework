@@ -1,12 +1,17 @@
 ---
 title: "MTHM508 Coursework"
-author: '700054986'
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
 ```
 
 # Problem
@@ -39,13 +44,13 @@ Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\th
 
 a. Use the quantile method seen in lectures and fit your prior with the MATCH tool.
 
-There may be a few ways to look at this - it depends on how infectious the bug is. For example, if the bug is highly infectious and infects 30% of the population, it may be sensible to place the median of the prior at around $(1 - 0.3 = 0.7)$. Extending this logic with the median at 0.7, 25%ile at 0.55 and 75%ile at 0.85. Plugging these into the MATCH elicitation tool, we get a scaled Beta Distribution with Params:
+There may be a few ways to look at this - it depends on how infectious the bug is. With no further information, if we assume that the chance of being infected is about $\frac{1}{2}$, (i.e. the bug is highly infectious and infects 50% of the population), it may be sensible to place the median of the prior at around $(1 - 0.5 = 0.5)$. Extending this logic with the median at 0.5, 25%ile at 0.25 and 75%ile at 0.75. Plugging these into the MATCH elicitation tool, we get a scaled Beta Distribution with Params:
 
-$a = 2.89$
+$a = 0.99$
 
-$b = 1.36$
+$b = 1.00$
 
-Let's try a more educated guess. According to [here](https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/conditionsanddiseases/articles/coronaviruscovid19latestinsights/infections), COVID-19 infection rate in England was around 3.21%. Let's say that (1 - 0.0321 = 0.9679) is the median, with 75%ile at 0.98 and 25%ile at 0.955   . With this. we get a scaled Beta Distribution with Params:
+Let's try a more educated guess. According to [here](https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/conditionsanddiseases/articles/coronaviruscovid19latestinsights/infections), COVID-19 infection rate in England was around 3.21%. Let's say that (1 - 0.0321 = 0.9679) is the median, with 25%ile at 0.955 and 75%ile at 0.98. With this. we get a scaled Beta Distribution with Params:
 
 $a = 82.58$
 
@@ -53,9 +58,19 @@ $b = 2.98$
 
 This seems too heavily skewed. We can settle for something in between.
 
-$a = 7.34$
+```{r}
+n_25 = (0.25+0.955)/2
+n_50 = (0.50+0.9679)/2
+n_75 = (0.75+0.98)/2
+print(n_25)
+print(n_50)
+print(n_75)
+```
 
-$b = 1.64$
+We use the tool [here](http://optics.eee.nottingham.ac.uk/match/uncertainty.php#) to estimate a and b for Beta distribution.
+$a = 3.64$
+
+$b = 1.46$
 
 b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)
 
@@ -113,7 +128,7 @@ Hence, $\pi(\theta|\boldsymbol{y})$ follows a Beta distribution
 $\theta|\boldsymbol{y} \sim Beta(a+s , n-s+b)$
 
 Plugging in our determined values for a and b, we get
-$\theta|\boldsymbol{y} \sim Beta(7+s , n-s+2)$
+$\theta|\boldsymbol{y} \sim Beta(3.64+s , n-s+1.46)$
 
 We know from our data that
 
@@ -127,21 +142,22 @@ print(sum(y_successes)/sum(y_trials)) # Value for y_bar
 ```
 
 Plugging in values for s and n, we get
-$\theta|\boldsymbol{y} \sim Beta(7+124 , 160-124+2)$
+$\theta|\boldsymbol{y} \sim Beta(3.64+s , n-s+1.46)$,
+We know the values of n as 160 and s as 124 
 
-$\theta|\boldsymbol{y} \sim Beta(131, 38)$
+$\theta|\boldsymbol{y} \sim Beta(127.64, 37.46)$
 
 
-
+**4.  Plot your prior and posterior on the same figure and give critical comment on the influence of the data on your prior beliefs.**
 ```{r}
-
+a = 3.64
+b = 1.46
 
 plot_beta_prior = function(successes , trials , a , b , n){
   
   binary_data <- tibble(x=seq(from = 0 , to = 1 , len = n)) %>%
     mutate(prior = dbeta(x , a , b)) %>%
     mutate(posterior = dbeta(x , successes + a , trials - successes + b))%>%
-    #mutate(likelihood = dbinom(x , size = n , prob = successes/trials))%>%
     pivot_longer(cols = c(2,3) , names_to = 'distribution' , values_to = 'density')
   
   ggplot(binary_data) +
@@ -150,7 +166,19 @@ plot_beta_prior = function(successes , trials , a , b , n){
 }
 
 # Prior has an effect
-plot_beta_prior(sum(y_successes) , sum(y_trials) , 3 , 38 , 100)
-
+plot_beta_prior(sum(y_successes) , sum(y_trials) , a , b , 100)
 ```
+We see that the data has significantly changed out prior beliefs.
 
+*Critical Comments*
+Even though the peak (mode) of the prior was closer to $1.0$ than that of the posterior or even the average successes rate observed by Lucy, it was still relatively spread out over the range $(0,1)$. On the other hand, the posterior has condensed the probabilities around $0.75$ to $0.8$, which happens to be very close to the average number of success rate observed by Lucy $\frac{124}{160} = 0.775$. Incorporating data from the observations has thus allowed us to have a much closer approximation of what the 'true' $\theta$ parameter might be.
+
+**5. Using only uniform random numbers, estimate the posterior predictive probability that more than 50 people attend Percy’s birthday party using Monte Carlo, ensuring that the error on your estimate is bounded above by 0.01.**
+You must:
+
+- Write down the probability you require as the appropriate integral.
+- State clearly how your uniform samples are converted to samples from the right distributions.
+- Only use sampling algorithms shown during the course and when more than one sampler is available, you must choose the most efficient.
+- Report the Monte Carlo Error of your estimate.
+- Include the code from your sampler in your report.
+- Whilst you may not use any inbuilt R samplers, you may use their inbuilt density/distribution functions (so rbinom cannot be used but dbinom and pbinom can be).
