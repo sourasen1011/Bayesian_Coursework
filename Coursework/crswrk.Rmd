@@ -1,0 +1,156 @@
+---
+title: "MTHM508 Coursework"
+author: '700054986'
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Problem
+
+Lucy has had 65 “yes” responses to baby Percy’s Birthday party invitation. She is planning the catering and there is a sickness bug going around that means it is likely a number of people will cancel.
+
+Suppose that she judges that the probability of any given guest dropping out due to illness is 1 - $\theta$ (so probability of attending is $\theta$).
+
+## We are making the tacit assumptions that, 
+i. Out of the 65 people who have responded "yes", those who will drop out will do so only because of the sickness.
+ii. Those who have been infected will not show up.
+
+**1. Describe the exchangeability judgement that Lucy is making.**
+
+*Definition 2.9.* A sequence ($Y_1, Y_2, . . .$) of random quantities is said to be
+exchangeable if the joint probability distribution of each sub-collection of n
+quantities ($Y_{i_1}, . . . , Y_{i_n}$) is the same.
+
+i. **Comment**. To say that a set of random quantities is exchangeable is a
+subjective judgement.
+
+ii. **Comment**. Exchangeability amounts to indifference over re-labelling the random quantities or permuting them.
+
+To simplify, for 2 r.v.s, $x_1$ and $x_2$, to be exchangeable, their joint probability distribution $P(x_1 , x_2) = P(x_2 , x_1)$. Therefore, *independent* and *identically distributed* random variables are exchangeable, by definition.
+
+The event of someone attending the event can be modeled as a random variable, $X \sim Bern(\theta)$ with $0 \le \theta \le 1$. Thus, $P(X = x_i) = \theta^{x_i}(1-\theta)^{(1-x_i)}$. Here, Lucy views all x_i to be i.i.d., thereby allowing her to make the exchangeability judgement. In simple terms,  she judges that the probability of **any given guest** is $\theta$, i.e., she views the chance of one person attending the event as equal to that of any other person and thus, the joint probability does not change with any shuffling of the $x_i$'s.
+
+**2. Suppose that you make the same exchangeability judgement as Lucy yourself.**
+Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\theta)$.
+
+a. Use the quantile method seen in lectures and fit your prior with the MATCH tool.
+
+There may be a few ways to look at this - it depends on how infectious the bug is. For example, if the bug is highly infectious and infects 30% of the population, it may be sensible to place the median of the prior at around $(1 - 0.3 = 0.7)$. Extending this logic with the median at 0.7, 25%ile at 0.55 and 75%ile at 0.85. Plugging these into the MATCH elicitation tool, we get a scaled Beta Distribution with Params:
+
+$a = 2.89$
+
+$b = 1.36$
+
+Let's try a more educated guess. According to [here](https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/conditionsanddiseases/articles/coronaviruscovid19latestinsights/infections), COVID-19 infection rate in England was around 3.21%. Let's say that (1 - 0.0321 = 0.9679) is the median, with 75%ile at 0.98 and 25%ile at 0.955   . With this. we get a scaled Beta Distribution with Params:
+
+$a = 82.58$
+
+$b = 2.98$
+
+This seems too heavily skewed. We can settle for something in between.
+
+$a = 7.34$
+
+$b = 1.64$
+
+b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)
+
+Say we first have a uniform prior $\theta$, such that $\pi(\theta) \propto 1$. Then, our posterior $\pi(\theta|y) \sim Beta(s + 1 , n - s + 1)$ with $s = n\overline{y}$
+
+We fabricate some data and say that $n$ = 7 and $\overline{y}$ = 0.85, such that s = 6. Now we have $\pi(\theta|y) \sim Beta(7 , 2)$ with $s = n\overline{y}$
+
+c. Use the prior predictive distribution to justify your choice.
+
+$p(y) = \int_{-\infty}^{\infty}p(y|\theta)\pi(\theta)d\theta$
+
+Plugging in the prior predictive distribution,
+
+$p(y) = \int_{-\infty}^{\infty}\theta^y(1-\theta)^{(1-y)}\frac{\tau(a+b)}{\tau(a)\tau(b)}\theta^{a-1}(1-\theta)^{b-1}d\theta$
+
+$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{a+y-1}(1-\theta)^{b-y}d\theta$
+
+$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta$
+
+$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}\int_{-\infty}^{\infty}\frac{\tau(a+b+1)}{\tau(a+y)\tau(b-y+1)}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta$
+
+$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}$
+
+Plugging in values of a and b,
+
+$=\frac{\tau(9)}{\tau(7)\tau(2)}\frac{\tau(7+y)\tau(3-y)}{\tau(10)}$
+
+Therefore, $p(y = 0) = \frac{1}{9}\frac{\tau(7)\tau(3)}{\tau(7)\tau(2)}$
+$p(y = 0) = \frac{2}{9}$
+
+And, $p(y = 1) = \frac{1}{9}\frac{\tau(8)\tau(2)}{\tau(7)\tau(2)}$
+$p(y = 1) = \frac{7}{9}$ , which is consistent with the expectation of a $Beta(7,2)$ distribution, i.e. $\frac{a}{a+b}$
+
+**3. Lucy attends 5 children's birthday parties in the run up to Percy’s and she judges that each one has the same probability of an attendee dropping out due to sickness. The number of expected attendees at each was 10, 50, 35, 25 and 40. There were 2, 8, 12, 6 and 8 absences respectively.**
+What is your posterior distribution for $\theta$ (*which specific Beta distribution is it*)?
+
+By Bayes,
+$\pi(\theta|\boldsymbol{y}) \propto p(\boldsymbol{y}|\theta)\pi(\theta)$
+
+$\pi(\theta|\boldsymbol{y}) \propto \pi(\theta)\prod_{i=1}^{n}p(y_i|\theta)$
+
+$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\prod_{i=1}^{n}\theta^{y_i}(1-\theta)^{1-y_i}$
+
+$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{\sum_{i=1}^{n}y_i}(1-\theta)^{n-\sum_{i=1}^{n}y_i}$
+
+Let us substitute $s = \sum_{i=1}^{n}y_i = n\overline{y}$
+
+$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{s}(1-\theta)^{n-s}$
+
+
+$\pi(\theta|\boldsymbol{y}) \propto \theta^{a+s-1}(1-\theta)^{n-s+b-1}$
+
+Hence, $\pi(\theta|\boldsymbol{y})$ follows a Beta distribution
+
+$\theta|\boldsymbol{y} \sim Beta(a+s , n-s+b)$
+
+Plugging in our determined values for a and b, we get
+$\theta|\boldsymbol{y} \sim Beta(7+s , n-s+2)$
+
+We know from our data that
+
+```{r}
+y_trials = c(10, 50, 35, 25, 40)
+y_failures = c(2, 8, 12, 6, 8)
+y_successes = y_trials - y_failures
+print(sum(y_trials)) # Value for n
+print(sum(y_successes)) # Value for s
+print(sum(y_successes)/sum(y_trials)) # Value for y_bar
+```
+
+Plugging in values for s and n, we get
+$\theta|\boldsymbol{y} \sim Beta(7+124 , 160-124+2)$
+
+$\theta|\boldsymbol{y} \sim Beta(131, 38)$
+
+
+
+```{r}
+
+
+plot_beta_prior = function(successes , trials , a , b , n){
+  
+  binary_data <- tibble(x=seq(from = 0 , to = 1 , len = n)) %>%
+    mutate(prior = dbeta(x , a , b)) %>%
+    mutate(posterior = dbeta(x , successes + a , trials - successes + b))%>%
+    #mutate(likelihood = dbinom(x , size = n , prob = successes/trials))%>%
+    pivot_longer(cols = c(2,3) , names_to = 'distribution' , values_to = 'density')
+  
+  ggplot(binary_data) +
+    geom_line(aes(x = x , y = density , col = distribution)) +
+    geom_vline(xintercept = successes/trials)
+}
+
+# Prior has an effect
+plot_beta_prior(sum(y_successes) , sum(y_trials) , 3 , 38 , 100)
+
+```
+
