@@ -84,45 +84,61 @@ $p(y) = \int_{-\infty}^{\infty}p(y|\theta)\pi(\theta)d\theta$
 
 Plugging in the prior predictive distribution,
 
-$p(y) = \int_{-\infty}^{\infty}\theta^y(1-\theta)^{(1-y)}\frac{\tau(a+b)}{\tau(a)\tau(b)}\theta^{a-1}(1-\theta)^{b-1}d\theta$
+$$
+p(y) = \int_{-\infty}^{\infty}\theta^y(1-\theta)^{(1-y)}\frac{\tau(a+b)}{\tau(a)\tau(b)}\theta^{a-1}(1-\theta)^{b-1}d\theta
+\\
 
-$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{a+y-1}(1-\theta)^{b-y}d\theta$
+=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{a+y-1}(1-\theta)^{b-y}d\theta
+\\
 
-$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta$
+=\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta
+\\
 
-$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}\int_{-\infty}^{\infty}\frac{\tau(a+b+1)}{\tau(a+y)\tau(b-y+1)}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta$
+=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}\int_{-\infty}^{\infty}\frac{\tau(a+b+1)}{\tau(a+y)\tau(b-y+1)}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta
+\\
 
-$=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}$
+=\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}
+\\
+$$
 
-Plugging in values of a and b,
+In the last step, we integrate the pdf of a $Beta$ distribution to be 1. 
+Then, plugging in values of a and b,
 
 $=\frac{\tau(9)}{\tau(7)\tau(2)}\frac{\tau(7+y)\tau(3-y)}{\tau(10)}$
 
 Therefore, $p(y = 0) = \frac{1}{9}\frac{\tau(7)\tau(3)}{\tau(7)\tau(2)}$
 $p(y = 0) = \frac{2}{9}$
 
+
 And, $p(y = 1) = \frac{1}{9}\frac{\tau(8)\tau(2)}{\tau(7)\tau(2)}$
 $p(y = 1) = \frac{7}{9}$ , which is consistent with the expectation of a $Beta(7,2)$ distribution, i.e. $\frac{a}{a+b}$
+
 
 **3. Lucy attends 5 children's birthday parties in the run up to Percy’s and she judges that each one has the same probability of an attendee dropping out due to sickness. The number of expected attendees at each was 10, 50, 35, 25 and 40. There were 2, 8, 12, 6 and 8 absences respectively.**
 What is your posterior distribution for $\theta$ (*which specific Beta distribution is it*)?
 
 By Bayes,
-$\pi(\theta|\boldsymbol{y}) \propto p(\boldsymbol{y}|\theta)\pi(\theta)$
+$$
+\pi(\theta|\boldsymbol{y}) \propto p(\boldsymbol{y}|\theta)\pi(\theta)
+\\
 
-$\pi(\theta|\boldsymbol{y}) \propto \pi(\theta)\prod_{i=1}^{n}p(y_i|\theta)$
+\pi(\theta|\boldsymbol{y}) \propto \pi(\theta)\prod_{i=1}^{n}p(y_i|\theta)
+\\
 
-$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\prod_{i=1}^{n}\theta^{y_i}(1-\theta)^{1-y_i}$
+\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\prod_{i=1}^{n}\theta^{y_i}(1-\theta)^{1-y_i}
+\\
 
-$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{\sum_{i=1}^{n}y_i}(1-\theta)^{n-\sum_{i=1}^{n}y_i}$
+\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{\sum_{i=1}^{n}y_i}(1-\theta)^{n-\sum_{i=1}^{n}y_i}
+\\
+$$
 
 Let us substitute $s = \sum_{i=1}^{n}y_i = n\overline{y}$
 
-$\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{s}(1-\theta)^{n-s}$
-
-
-$\pi(\theta|\boldsymbol{y}) \propto \theta^{a+s-1}(1-\theta)^{n-s+b-1}$
-
+$$
+\pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{s}(1-\theta)^{n-s}
+\\
+\pi(\theta|\boldsymbol{y}) \propto \theta^{a+s-1}(1-\theta)^{n-s+b-1}
+$$
 Hence, $\pi(\theta|\boldsymbol{y})$ follows a Beta distribution
 
 $\theta|\boldsymbol{y} \sim Beta(a+s , n-s+b)$
@@ -131,7 +147,6 @@ Plugging in our determined values for a and b, we get
 $\theta|\boldsymbol{y} \sim Beta(3.64+s , n-s+1.46)$
 
 We know from our data that
-
 ```{r}
 y_trials = c(10, 50, 35, 25, 40)
 y_failures = c(2, 8, 12, 6, 8)
@@ -148,7 +163,9 @@ We know the values of n as 160 and s as 124
 $\theta|\boldsymbol{y} \sim Beta(127.64, 37.46)$
 
 
+
 **4.  Plot your prior and posterior on the same figure and give critical comment on the influence of the data on your prior beliefs.**
+
 ```{r}
 a = 3.64
 b = 1.46
@@ -168,7 +185,7 @@ plot_beta_prior = function(successes , trials , a , b , n){
 # Prior has an effect
 plot_beta_prior(sum(y_successes) , sum(y_trials) , a , b , 100)
 ```
-We see that the data has significantly changed out prior beliefs.
+We see that the data has significantly changed our prior beliefs.
 
 *Critical Comments*
 Even though the peak (mode) of the prior was closer to $1.0$ than that of the posterior or even the average successes rate observed by Lucy, it was still relatively spread out over the range $(0,1)$. On the other hand, the posterior has condensed the probabilities around $0.75$ to $0.8$, which happens to be very close to the average number of success rate observed by Lucy $\frac{124}{160} = 0.775$. Incorporating data from the observations has thus allowed us to have a much closer approximation of what the 'true' $\theta$ parameter might be.
@@ -182,3 +199,147 @@ You must:
 - Report the Monte Carlo Error of your estimate.
 - Include the code from your sampler in your report.
 - Whilst you may not use any inbuilt R samplers, you may use their inbuilt density/distribution functions (so rbinom cannot be used but dbinom and pbinom can be).
+
+The posterior predictive distribution is as follows:
+$p(\tilde{y}|\boldsymbol{y}) = \int_{-\infty}^{\infty}p(\tilde{y}|\theta)\pi(\theta|\tilde{\boldsymbol{y}})d\theta$
+
+With T as an arbitrary threshold,
+
+$p(\tilde{y}>T|\boldsymbol{y}) = \int_{T}^{\infty}p(\tilde{y}|\boldsymbol{y})d\tilde{y}$
+
+$= \int_{T}^{\infty}\int_{-\infty}^{\infty}p(\tilde{y}|\theta)\pi(\theta|\tilde{\boldsymbol{y}})d\theta d\tilde{y}$
+
+$= \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}I(\tilde{y}>T)p(\tilde{y}|\theta)\pi(\theta|\tilde{\boldsymbol{y}})d\theta d\tilde{y}$
+
+$= \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}I(\tilde{y}>T)p(\tilde{y},\theta |\boldsymbol{y})d\theta d\tilde{y}$
+
+where I(A) is the indicator random variable for event A occuring, i.e.
+
+$$
+I(A) =
+\begin{cases}
+ 1\, ,& if \ A \ happens \\
+ 0  ,& otherwise
+ \end{cases}       
+$$
+We take 
+$$
+g(\theta|\tilde{y}) = I(\tilde{y}>T) , \ as\ our \ function
+\\
+and
+\\
+f(\theta , y) = p(\tilde{y},\theta|\boldsymbol{y}) ,\ as \ our \ sampling \ distribution
+$$
+To apply the Monte Carlo algorithm here, we need to
+
+1. sample $(y_1 , \theta_1) , ... , (y_n , \theta_n)$ from the conditional joint distribution $p(\tilde{y},\theta|\boldsymbol{y})$
+2. Pass the values through the function $g(.)$
+3. Compute average of samples making it above $T$
+
+Sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, i.e. $Beta(127.64, 37.46)$ and then use said $\theta$ to sample $y_i$ from $Binom(n , \theta_*)$. Plugging $n=65$, we have $Binom(65 , \theta_*)$
+
+
+Compute MC estimate as $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$. Plugging $T=50$, we have $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$
+
+
+**Box Muller and Rejection Sampling**
+We want to generate a $Beta(127.64 , 37.46)$ by using a standard uniform distribution $U(0,1)$
+
+
+### **Creating Beta and Binomial Samples without using native R samplers**
+
+In order to create a $Beta$ distribution, we need to be able to sample from a Normal distribution, which in turn, we will build via the Box-Muller method
+
+```{r}
+N = 1e3
+alpha = 127.64
+beta = 37.46
+
+# Box Muller for sampling normals
+box_muller = function(N){
+  M = ceiling(N/2)
+  thetas = runif(M)*2*pi
+  Us = runif(M)
+  Ws = -2*log(1-Us)
+  X1 = sqrt(Ws)*cos(thetas)
+  X2 = sqrt(Ws)*sin(thetas)
+  c(X1 , X2)[1:N]
+}
+# Check how well it approximates a normal dist
+plot(sort(rnorm(1000)) , sort(box_muller(1000)))
+
+# Normal Envelope for Beta
+betaSams = function(n , a, b){
+  A = a - 1
+  B = b - 1
+  xhat = A/(A+B)
+  H = -1*(A^(1/3) + B^(1/3))^3
+  Zs = box_muller(n) # substitute Normal sampler via ox Muller
+  Xus = xhat + Zs*(sqrt(-1/H))
+  hxhat = A*log(xhat)+ B*log(1-xhat)
+  c = gamma(a)*gamma(b)/gamma(a+b)
+  k = exp(hxhat)*sqrt(-2*pi/H)
+  # Any negative numbers are already not worth considering
+  Xus = Xus[Xus >= 0]
+  # Initiate just as many random unifs (0,1)
+  Us = runif(length(Xus))
+  # Acceptance-Rejection step
+  Xus[Us*exp(hxhat)*exp(H/2)*(Xus - xhat)^2 <= (Xus^A)*((1-Xus)^B)]
+}
+
+# Get the accepted samples
+x = betaSams(N , alpha , beta)
+tbetas = x[!is.na(x)]
+
+# Check how well it approximates a Beta dist
+plot(sort(rbeta(length(tbetas) , alpha , beta)) , sort(tbetas))
+plot(density(tbetas))
+hist(tbetas)
+```
+Now that we have a sample of Beta-distributed random variables, let us sample a binomial conditional on this Beta. The easiest way to do this would be by generating $n$ i.i.d. Bernoulli random quantities.
+
+```{r}
+# Bernoulli from Uniform
+binarify = function(num , theta){
+  if (num >= theta){
+    return(0)
+  }
+  else{
+    return(1)
+  }
+}
+
+# Binomial Sampler - Count successes
+binomial = function(trials , theta){
+  Us = runif(trials)
+  bin_vec = c()
+  for (i in seq_along(Us)){
+    val = sapply(Us[i] , binarify , theta)
+    bin_vec = c(bin_vec , val)
+  }
+  return(sum(bin_vec))
+}
+
+binomial_samples_gen = function(N , trials , thetas){
+  # Run the binomial sampler N times. See distribution
+  ySamples = c()
+  for (i in 1:N){
+    ySamples = c(ySamples , binomial(trials , sample(thetas , 1)))
+  }
+  return(ySamples)
+}
+
+# Variables
+trials = 65
+Us = runif(N)
+
+# Generate
+ySamples = binomial_samples_gen(N , trials , tbetas)
+
+# Monte Carlo estimate
+phat = sum(ySamples>50)/N
+# Monte Carlo error
+MCerror = sqrt(phat*(1-phat)/N)
+
+print(paste('The MC estimate is', round(phat, 6), 'and (', round(phat-1.96*MCerror , 6), ',',round(phat+1.96*MCerror , 6),') is a 95% C.I'))
+```
