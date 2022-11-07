@@ -38,7 +38,6 @@ ii. **Comment**. Exchangeability amounts to indifference over re-labelling the r
 To simplify, for 2 r.v.s, $x_1$ and $x_2$, to be exchangeable, their joint probability distribution $P(x_1 , x_2) = P(x_2 , x_1)$. Therefore, *independent* and *identically distributed* random variables are exchangeable, by definition.
 
 The event of someone attending the event can be modeled as a random variable, $X \sim Bern(\theta)$ with $0 \le \theta \le 1$. Thus, $P(X = x_i) = \theta^{x_i}(1-\theta)^{(1-x_i)}$. Here, Lucy views all x_i to be i.i.d., thereby allowing her to make the exchangeability judgement. In simple terms,  she judges that the probability of **any given guest** is $\theta$, i.e., she views the chance of one person attending the event as equal to that of any other person and thus, the joint probability does not change with any shuffling of the $x_i$'s.
-
 **2. Suppose that you make the same exchangeability judgement as Lucy yourself.**
 Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\theta)$.
 
@@ -66,7 +65,6 @@ print(n_25)
 print(n_50)
 print(n_75)
 ```
-
 We use the tool [here](http://optics.eee.nottingham.ac.uk/match/uncertainty.php#) to estimate a and b for Beta distribution.
 $a = 3.64$
 
@@ -87,20 +85,14 @@ Plugging in the prior predictive distribution,
 $$
 p(y) = \int_{-\infty}^{\infty}\theta^y(1-\theta)^{(1-y)}\frac{\tau(a+b)}{\tau(a)\tau(b)}\theta^{a-1}(1-\theta)^{b-1}d\theta
 \\
-
 =\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{a+y-1}(1-\theta)^{b-y}d\theta
 \\
-
 =\frac{\tau(a+b)}{\tau(a)\tau(b)}\int_{-\infty}^{\infty}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta
 \\
-
 =\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}\int_{-\infty}^{\infty}\frac{\tau(a+b+1)}{\tau(a+y)\tau(b-y+1)}\theta^{(a+y)-1}(1-\theta)^{(b-y+1)-1}d\theta
 \\
-
 =\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}
-\\
 $$
-
 In the last step, we integrate the pdf of a $Beta$ distribution to be 1. 
 Then, plugging in values of a and b,
 
@@ -121,15 +113,11 @@ By Bayes,
 $$
 \pi(\theta|\boldsymbol{y}) \propto p(\boldsymbol{y}|\theta)\pi(\theta)
 \\
-
 \pi(\theta|\boldsymbol{y}) \propto \pi(\theta)\prod_{i=1}^{n}p(y_i|\theta)
 \\
-
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\prod_{i=1}^{n}\theta^{y_i}(1-\theta)^{1-y_i}
 \\
-
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{\sum_{i=1}^{n}y_i}(1-\theta)^{n-\sum_{i=1}^{n}y_i}
-\\
 $$
 
 Let us substitute $s = \sum_{i=1}^{n}y_i = n\overline{y}$
