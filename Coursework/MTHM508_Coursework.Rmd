@@ -39,9 +39,11 @@ To simplify, for 2 r.v.s, $x_1$ and $x_2$, to be exchangeable, their joint proba
 The event of someone attending the event can be modeled as a random variable, $X \sim Bern(\theta)$ with $0 \le \theta \le 1$. Thus, $P(X = x_i) = \theta^{x_i}(1-\theta)^{(1-x_i)}$. Here, Lucy views all $x_i$ to be i.i.d., thereby allowing her to make the exchangeability judgement. In simple terms, she makes a symmetry judgement that the probability of **any given guest attending** is $\theta$, i.e., she views the chance of one person attending the event as equal to that of any other person and thus, the joint probability does not change with any shuffling of the $i$'s in the  sequence of $x_i$s.
 
 **2. Suppose that you make the same exchangeability judgement as Lucy yourself.**
+
 Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\theta)$.
 
-\textcolor{blue}{b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)}
+
+**b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)**
 
 Say we first have a uniform prior $\theta$, such that $\pi(\theta) \propto 1$.
 By Bayes we have,
@@ -53,9 +55,11 @@ $$
 $$
 \pi(\theta|\boldsymbol{y}) \propto 1 \cdot \prod_{i=1}^{n} p(y_i|\theta)
 $$
+
 $$
 \pi(\theta|\boldsymbol{y}) \propto \prod_{i=1}^{n} \theta^{y_i}(1-\theta)^{1-y_i}
 $$
+
 $$
 \pi(\theta|\boldsymbol{y}) \propto \theta^{\scriptstyle\sum_{i=1}^{n}y_i}(1-\theta)^{n-\scriptstyle\sum_{i=1}^{n}y_i}
 $$
@@ -74,7 +78,8 @@ From here, we say that $n$ = 20 and $s$ = 15, such that $\overline{y}$ = 0.75, w
 
 Now we have $\pi(\theta|y) \sim Beta(16 , 6)$ with $s = n\overline{y}$
 
-\textcolor{blue}{c. Use the prior predictive distribution to justify your choice.}
+
+**c. Use the prior predictive distribution to justify your choice.**
 
 $p(y) = \int_{-\infty}^{\infty}p(y|\theta)\pi(\theta)d\theta$
 
@@ -114,19 +119,23 @@ $p(y = 0) = \frac{16}{22}$ , which is consistent with the expectation of a $Beta
 
 
 **3. Lucy attends 5 children's birthday parties in the run up to Percy’s and she judges that each one has the same probability of an attendee dropping out due to sickness. The number of expected attendees at each was 10, 50, 35, 25 and 40. There were 2, 8, 12, 6 and 8 absences respectively.**
+
 What is your posterior distribution for $\theta$ (*which specific Beta distribution is it*)?
 
 By Bayes,
 $$
 \pi(\theta|\boldsymbol{y}) \propto p(\boldsymbol{y}|\theta)\pi(\theta)
-\\
+$$
+
+$$
 \pi(\theta|\boldsymbol{y}) \propto \pi(\theta)\prod_{i=1}^{n}p(y_i|\theta)
-\\
 $$
 
 $$
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\prod_{i=1}^{n}\theta^{y_i}(1-\theta)^{1-y_i}
-\\
+$$
+
+$$
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{\sum_{i=1}^{n}y_i}(1-\theta)^{n-\sum_{i=1}^{n}y_i}
 $$
 
@@ -134,7 +143,9 @@ Let us substitute $s = \sum_{i=1}^{n}y_i = n\overline{y}$
 
 $$
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a-1}(1-\theta)^{b-1}\theta^{s}(1-\theta)^{n-s}
-\\
+$$
+
+$$
 \pi(\theta|\boldsymbol{y}) \propto \theta^{a+s-1}(1-\theta)^{n-s+b-1}
 $$
 Hence, $\pi(\theta|\boldsymbol{y})$ follows a Beta distribution
@@ -159,7 +170,6 @@ $\theta|\boldsymbol{y} \sim Beta(16+s , n-s+6)$,
 We know the values of n as 160 and s as 124 
 
 $\theta|\boldsymbol{y} \sim Beta(140, 42)$
-
 
 
 **4.  Plot your prior and posterior on the same figure and give critical comment on the influence of the data on your prior beliefs.**
@@ -190,6 +200,7 @@ We see that the data has significantly changed our prior beliefs.
 Although the prior and posterior means are not that far apart, the prior is relatively spread out over the range $(0,1)$. On the other hand, the posterior has condensed the probabilities around $\frac{140}{182}=0.769$, which happens to be very close to the average number of success rate observed by Lucy $\frac{124}{160} = 0.775$. Incorporating data from the observations has thus allowed us to have a much closer approximation of what the 'true' $\theta$ parameter might be.
 
 **5. Using only uniform random numbers, estimate the posterior predictive probability that more than 50 people attend Percy’s birthday party using Monte Carlo, ensuring that the error on your estimate is bounded above by 0.01.**
+
 You must:
 
 - Write down the probability you require as the appropriate integral.
@@ -241,7 +252,8 @@ Sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, 
 Compute MC estimate as $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$. Plugging $T=50$, we have $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$
 
 
-**Box Muller and Rejection Sampling**
+**Box Muller and Rejection Sampling with Normal Envelop**
+
 We want to generate a $Beta(140 , 42)$ by using a standard uniform distribution $U(0,1)$
 
 
