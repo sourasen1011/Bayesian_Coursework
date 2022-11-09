@@ -13,7 +13,6 @@ library(tidyr)
 library(ggplot2)
 library(tidyverse)
 ```
-
 # Problem
 
 Lucy has had 65 “yes” responses to baby Percy’s Birthday party invitation. She is planning the catering and there is a sickness bug going around that means it is likely a number of people will cancel.
@@ -42,13 +41,40 @@ The event of someone attending the event can be modeled as a random variable, $X
 **2. Suppose that you make the same exchangeability judgement as Lucy yourself.**
 Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\theta)$.
 
-b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)
+\textcolor{blue}{b. Use a “pseudo data” argument to select the Beta parameters (expressing current knowledge as if updating a uniform prior with “pseudo observations” as discussed in lectures)}
 
-Say we first have a uniform prior $\theta$, such that $\pi(\theta) \propto 1$. Then, our posterior $\pi(\theta|y) \sim Beta(s + 1 , n - s + 1)$ with $s = n\overline{y}$
+Say we first have a uniform prior $\theta$, such that $\pi(\theta) \propto 1$.
+By Bayes we have,
 
-We fabricate some data and say that $n$ = 7 and $\overline{y}$ = 0.85, such that s = 6. Now we have $\pi(\theta|y) \sim Beta(7 , 2)$ with $s = n\overline{y}$
+$$
+\pi(\theta|\boldsymbol{y}) \propto \pi(\theta)p(\boldsymbol{y}|\theta)
+$$
 
-c. Use the prior predictive distribution to justify your choice.
+$$
+\pi(\theta|\boldsymbol{y}) \propto 1 \cdot \prod_{i=1}^{n} p(y_i|\theta)
+$$
+$$
+\pi(\theta|\boldsymbol{y}) \propto \prod_{i=1}^{n} \theta^{y_i}(1-\theta)^{1-y_i}
+$$
+$$
+\pi(\theta|\boldsymbol{y}) \propto \theta^{\scriptstyle\sum_{i=1}^{n}y_i}(1-\theta)^{n-\scriptstyle\sum_{i=1}^{n}y_i}
+$$
+Writing $s = \sum_{i=1}^{n}y_i  = n\overline{y}$,
+
+$$
+\pi(\theta|\boldsymbol{y}) \propto \theta^{(s+1)-1}(1-\theta)^{(n-s+1)-1}
+$$
+$\pi(\theta|\boldsymbol{y})$ is proportional to a Beta distribution
+
+Then, our posterior $\pi(\theta|\boldsymbol{y}) \sim Beta(s + 1 , n - s + 1)$ with $s = n\overline{y}$.
+
+Let's fabricate some data. $\boldsymbol{y} = (1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0)$
+
+From here, we say that $n$ = 20 and $s$ = 15, such that $\overline{y}$ = 0.75, which gives us $a=s+1$ and $b=n-s+1$.
+
+Now we have $\pi(\theta|y) \sim Beta(16 , 6)$ with $s = n\overline{y}$
+
+\textcolor{blue}{c. Use the prior predictive distribution to justify your choice.}
 
 $p(y) = \int_{-\infty}^{\infty}p(y|\theta)\pi(\theta)d\theta$
 
@@ -70,17 +96,21 @@ $$
 \\
 =\frac{\tau(a+b)}{\tau(a)\tau(b)}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a+b+1)}
 $$
+
+$$
+=\frac{1}{a+b}\frac{\tau(a+y)\tau(b-y+1)}{\tau(a)\tau(b)}
+$$
 In the last step, we integrate the pdf of a $Beta$ distribution to be 1. 
 Then, plugging in values of a and b,
 
-$=\frac{\tau(9)}{\tau(7)\tau(2)}\frac{\tau(7+y)\tau(3-y)}{\tau(10)}$
+$=\frac{1}{22}\frac{\tau(16+y)\tau(7-y)}{\tau(16)\tau(6)}$
 
-Therefore, $p(y = 0) = \frac{1}{9}\frac{\tau(7)\tau(3)}{\tau(7)\tau(2)}$
-$p(y = 0) = \frac{2}{9}$
+Therefore, $p(y = 0) =\frac{1}{22}\frac{\tau(16)\tau(7)}{\tau(16)\tau(6)}$
+$p(y = 0) = \frac{6}{22}$
 
 
-And, $p(y = 1) = \frac{1}{9}\frac{\tau(8)\tau(2)}{\tau(7)\tau(2)}$
-$p(y = 1) = \frac{7}{9}$ , which is consistent with the expectation of a $Beta(7,2)$ distribution, i.e. $\frac{a}{a+b}$
+And, $p(y = 1) =\frac{1}{22}\frac{\tau(17)\tau(6)}{\tau(16)\tau(6)}$
+$p(y = 0) = \frac{16}{22}$ , which is consistent with the expectation of a $Beta(16,6)$ distribution, i.e. $\frac{a}{a+b}$
 
 
 **3. Lucy attends 5 children's birthday parties in the run up to Percy’s and she judges that each one has the same probability of an attendee dropping out due to sickness. The number of expected attendees at each was 10, 50, 35, 25 and 40. There were 2, 8, 12, 6 and 8 absences respectively.**
@@ -112,7 +142,7 @@ Hence, $\pi(\theta|\boldsymbol{y})$ follows a Beta distribution
 $\theta|\boldsymbol{y} \sim Beta(a+s , n-s+b)$
 
 Plugging in our determined values for a and b, we get
-$\theta|\boldsymbol{y} \sim Beta(3.64+s , n-s+1.46)$
+$\theta|\boldsymbol{y} \sim Beta(16+s , n-s+6)$
 
 We know from our data that
 ```{r}
@@ -125,18 +155,18 @@ print(sum(y_successes)/sum(y_trials)) # Value for y_bar
 ```
 
 Plugging in values for s and n, we get
-$\theta|\boldsymbol{y} \sim Beta(3.64+s , n-s+1.46)$,
+$\theta|\boldsymbol{y} \sim Beta(16+s , n-s+6)$,
 We know the values of n as 160 and s as 124 
 
-$\theta|\boldsymbol{y} \sim Beta(127.64, 37.46)$
+$\theta|\boldsymbol{y} \sim Beta(140, 42)$
 
 
 
 **4.  Plot your prior and posterior on the same figure and give critical comment on the influence of the data on your prior beliefs.**
 
 ```{r}
-a = 3.64
-b = 1.46
+a = 16
+b = 6
 
 plot_beta_prior = function(successes , trials , a , b , n){
   
@@ -155,8 +185,9 @@ plot_beta_prior(sum(y_successes) , sum(y_trials) , a , b , 100)
 ```
 We see that the data has significantly changed our prior beliefs.
 
-*Critical Comments*
-Even though the peak (mode) of the prior was closer to $1.0$ than that of the posterior or even the average successes rate observed by Lucy, it was still relatively spread out over the range $(0,1)$. On the other hand, the posterior has condensed the probabilities around $0.75$ to $0.8$, which happens to be very close to the average number of success rate observed by Lucy $\frac{124}{160} = 0.775$. Incorporating data from the observations has thus allowed us to have a much closer approximation of what the 'true' $\theta$ parameter might be.
+*Critical Comments:*
+
+Although the prior and posterior means are not that far apart, the prior is relatively spread out over the range $(0,1)$. On the other hand, the posterior has condensed the probabilities around $\frac{140}{182}=0.769$, which happens to be very close to the average number of success rate observed by Lucy $\frac{124}{160} = 0.775$. Incorporating data from the observations has thus allowed us to have a much closer approximation of what the 'true' $\theta$ parameter might be.
 
 **5. Using only uniform random numbers, estimate the posterior predictive probability that more than 50 people attend Percy’s birthday party using Monte Carlo, ensuring that the error on your estimate is bounded above by 0.01.**
 You must:
@@ -204,14 +235,14 @@ To apply the Monte Carlo algorithm here, we need to
 2. Pass the values through the function $g(.)$
 3. Compute average of samples making it above $T$
 
-Sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, i.e. $Beta(127.64, 37.46)$ and then use said $\theta$ to sample $y_i$ from $Binom(n , \theta_*)$. Plugging $n=65$, we have $Binom(65 , \theta_*)$
+Sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, i.e. $Beta(140, 42)$ and then use said $\theta$ to sample $y_i$ from $Binom(n , \theta_*)$. Plugging $n=65$, we have $Binom(65 , \theta_*)$
 
 
 Compute MC estimate as $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$. Plugging $T=50$, we have $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$
 
 
 **Box Muller and Rejection Sampling**
-We want to generate a $Beta(127.64 , 37.46)$ by using a standard uniform distribution $U(0,1)$
+We want to generate a $Beta(140 , 42)$ by using a standard uniform distribution $U(0,1)$
 
 
 ### **Creating Beta and Binomial Samples without using native R samplers**
@@ -219,9 +250,9 @@ We want to generate a $Beta(127.64 , 37.46)$ by using a standard uniform distrib
 In order to create a $Beta$ distribution, we need to be able to sample from a Normal distribution, which in turn, we will build via the Box-Muller method
 
 ```{r}
-N = 1e3
-alpha = 127.64
-beta = 37.46
+N = 1e4
+alpha = 140
+beta = 42
 
 # Box Muller for sampling normals
 box_muller = function(N){
@@ -261,14 +292,20 @@ tbetas = x[!is.na(x)]
 
 # Check how well it approximates a Beta dist
 plot(sort(rbeta(length(tbetas) , alpha , beta)) , sort(tbetas))
-plot(density(tbetas))
+
 hist(tbetas)
 ```
 Now that we have a sample of Beta-distributed random variables, let us sample a binomial conditional on this Beta. The easiest way to do this would be by generating $n$ i.i.d. Bernoulli random quantities.
 
 ```{r}
+# Variables
+trials = 65
+
 # Bernoulli from Uniform
 binarify = function(num , theta){
+  # theta is the probability of success
+  # though not enforced by the function, we will use this in a context where
+  # theta is a probability and num is a random draw from a U(0,1) distribution
   if (num >= theta){
     return(0)
   }
@@ -279,12 +316,20 @@ binarify = function(num , theta){
 
 # Binomial Sampler - Count successes
 binomial = function(trials , theta){
+  # trials is number of bernoulli experiments
+  # theta is the probability of a success
+  # Generate 'trials' number of samples from U(0,1)
   Us = runif(trials)
+  # create an empty vec - this will store the results of our 'trials' number
+  # of Bernoulli experiments
   bin_vec = c()
   for (i in seq_along(Us)){
+    # perform bernoulli experiment
     val = sapply(Us[i] , binarify , theta)
+    # store results
     bin_vec = c(bin_vec , val)
   }
+  # return the number of successes
   return(sum(bin_vec))
 }
 
@@ -297,10 +342,6 @@ binomial_samples_gen = function(N , trials , thetas){
   return(ySamples)
 }
 
-# Variables
-trials = 65
-Us = runif(N)
-
 # Generate
 ySamples = binomial_samples_gen(N , trials , tbetas)
 
@@ -309,5 +350,7 @@ phat = sum(ySamples>50)/N
 # Monte Carlo error
 MCerror = sqrt(phat*(1-phat)/N)
 
-print(paste('The MC estimate is', round(phat, 6), 'and (', round(phat-1.96*MCerror , 6), ',',round(phat+1.96*MCerror , 6),') is a 95% C.I'))
+print(paste('The MC estimate is', round(phat, 6), 'and the MC error is' ,round(MCerror , 6)))
+
+print(paste('(',round(phat-1.96*MCerror , 6), ',',round(phat+1.96*MCerror , 6),') is a 95% C.I'))
 ```
