@@ -38,6 +38,8 @@ To simplify, for 2 r.v.s, $x_1$ and $x_2$, to be exchangeable, their joint proba
 
 The event of someone attending the event can be modeled as a random variable, $X \sim Bern(\theta)$ with $0 \le \theta \le 1$. Thus, $P(X = x_i) = \theta^{x_i}(1-\theta)^{(1-x_i)}$. Here, Lucy views all $x_i$ to be i.i.d., thereby allowing her to make the exchangeability judgement. In simple terms, she makes a symmetry judgement that the probability of **any given guest attending** is $\theta$, i.e., she views the chance of one person attending the event as equal to that of any other person and thus, the joint probability does not change with any shuffling of the $i$'s in the  sequence of $x_i$s.
 
+
+
 **2. Suppose that you make the same exchangeability judgement as Lucy yourself.**
 
 Derive and carefully justify your Beta prior distribution for $\theta$, $\pi(\theta)$.
@@ -111,11 +113,13 @@ Then, plugging in values of a and b,
 $=\frac{1}{22}\frac{\Gamma(16+y)\Gamma(7-y)}{\Gamma(16)\Gamma(6)}$
 
 Therefore, $p(y = 0) =\frac{1}{22}\frac{\Gamma(16)\Gamma(7)}{\Gamma(16)\Gamma(6)}$
+
 $p(y = 0) = \frac{6}{22}$
 
 
 And, $p(y = 1) =\frac{1}{22}\frac{\Gamma(17)\Gamma(6)}{\Gamma(16)\Gamma(6)}$
-$p(y = 0) = \frac{16}{22}$ , which is consistent with the expectation of a $Beta(16,6)$ distribution, i.e. $\frac{a}{a+b}$
+
+$p(y = 1) = \frac{16}{22}$ , which is consistent with the expectation of a $Beta(16,6)$ distribution, i.e. $\frac{a}{a+b}$
 
 
 **3. Lucy attends 5 children's birthday parties in the run up to Percy’s and she judges that each one has the same probability of an attendee dropping out due to sickness. The number of expected attendees at each was 10, 50, 35, 25 and 40. There were 2, 8, 12, 6 and 8 absences respectively.**
@@ -174,6 +178,7 @@ Plugging in values for s and n, we get $\theta|\boldsymbol{y} \sim Beta(140, 42)
 **4.  Plot your prior and posterior on the same figure and give critical comment on the influence of the data on your prior beliefs.**
 
 ```{r}
+# Below code has been taken from MTHM508 lectures (with minor changes)
 a = 16
 b = 6
 
@@ -222,7 +227,7 @@ $= \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}I(\tilde{y}>T)p(\tilde{y}|\thet
 
 $= \int_{-\infty}^{\infty}\int_{-\infty}^{\infty}I(\tilde{y}>T)p(\tilde{y},\theta |\boldsymbol{y})d\theta d\tilde{y}$
 
-where I(A) is the indicator random variable for event A occuring, i.e.
+where $I(A)$ is the indicator random variable for event A occuring, i.e.
 
 $$
 I(A) =
@@ -233,22 +238,18 @@ I(A) =
 $$
 We take 
 $$
-g(\theta|\tilde{y}) = I(\tilde{y}>T) , \ as\ our \ function
-\\
-and
-\\
-f(\theta , y) = p(\tilde{y},\theta|\boldsymbol{y}) ,\ as \ our \ sampling \ distribution
+g(\tilde{y}) = I(\tilde{y}>T) , \ as\ our \ function \ and \ f(\tilde{y},\theta) = p(\tilde{y},\theta|\boldsymbol{y}) ,\ as \ our \ sampling \ distribution
 $$
 To apply the Monte Carlo algorithm here, we need to
 
 1. sample $(y_1 , \theta_1) , ... , (y_n , \theta_n)$ from the conditional joint distribution $p(\tilde{y},\theta|\boldsymbol{y})$
 2. Pass the values through the function $g(.)$
-3. Compute average of samples making it above $T$
+3. Compute average of samples which are above $T$
 
-Sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, i.e. $Beta(140, 42)$ and then use said $\theta$ to sample $y_i$ from $Binom(n , \theta_*)$. Plugging $n=65$, we have $Binom(65 , \theta_*)$
+To do $1.$, we can sequentially sample $\theta_*$ from the posterior $\pi(\theta|\boldsymbol{y})$, i.e. $Beta(140, 42)$ and then use said $\theta_*$ to sample $y_i$ from $Binom(n , \theta_*)$. Plugging $n=65$, we have $Binom(65 , \theta_*)$
 
 
-Compute MC estimate as $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$. Plugging $T=50$, we have $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$.
+Compute MC estimate as $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > T)$. Plugging $T=50$, we have $\hat{g} = \frac{1}{N} \sum_{i=1}^{N}I(y_i > 50)$.
 
 *Note: $N = 65$ here.*
 
@@ -287,6 +288,7 @@ We want to generate a $Beta(140 , 42)$ by using a standard uniform distribution 
 In order to create a $Beta$ distribution, we need to be able to sample from a Normal distribution, which in turn, we will build via the Box-Muller method.
 
 ```{r}
+# Below code has been taken from MTHM508 lectures (with minor changes)
 N = 1e4
 alpha = 140
 beta = 42
@@ -304,6 +306,7 @@ box_muller = function(N){
 # Check how well it approximates a normal dist
 plot(sort(rnorm(1000)) , sort(box_muller(1000)))
 
+# Below code has been taken from MTHM508 lectures (with minor changes)
 # Normal Envelope for Beta
 betaSams = function(n , a, b){
   A = a - 1
