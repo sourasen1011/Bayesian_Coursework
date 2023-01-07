@@ -7,12 +7,12 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE)
 ```
 
-## Problem
+####  1. Present a single Bayesian analysis consisting of a hierarchical model, fit using brms, for the event that a particular homicide is solved given the values of the relevant covariates in this data set.
 
-The homicides data set contains entries for all recorded homicides in London boroughs from 2003 to March 2022. The first of the month on which the homicide occurred is given as the recorded date. Year (counting the year in the data with 2003 = 1, 2004 = 2 etc), month (which month of the year) and season variables have been added to the data. The data also includes information on the age, sex and ethnicity of the victim, as well as whether the case was solved by the police or not. The method of killing is also recorded, as is whether or not the case involved domestic abuse.
+Load the required libraries and the data.
 
 ```{r}
 # Load libraries - suppress messages
@@ -42,56 +42,37 @@ Some functions to 'binarize' the data are applied, as most of them are categoric
 
 ```{r}
 # Functions
-#__________________________________________________________
-# binarize the solved_status
-binarize = function(df,col,set_to_one){
-  df[col]=ifelse(df[col]==set_to_one,1,0)
+
+# binarize categorical variables
+binarize = function(df,col,set_to_one,other_encoding){
+  df[col]=ifelse(df[col]==set_to_one,1,other_encoding)
   return(df)
 }
-# binarize the other categorical data
-binarize_2 = function(df,col,set_to_one){
-  df[col]=ifelse(df[col]==set_to_one,1,-1)
-  return(df)
-}
-# convert ethnicity to num (modififed from code showcased during MTHM508 Pima Indians lectures)
-ethinicity_num_conv = function(vec){
+# capture if ethnicity has been reported (modififed from  MTHM508 Pima Indians lectures)
+ethinicity_reported = function(vec){
   ans <- as.character(vec)
   for(i in 1:length(vec)){
     if(vec[i] == 'Not Reported/Not known'){
-      ans[i] = 1
-    }
-    else if(vec[i] == 'Other'){
-      ans[i] = 2
-    }
-    else if(vec[i] == 'Black'){
-      ans[i] = 3
-    }
-    else if(vec[i] == 'Asian'){
-      ans[i] = 4
+      ans[i] = 0
     }
     else{
-      ans[i] = 5
+      ans[i] = 1
     }
   }
   return(as.numeric(ans))
 }
 # Pipeline Function for cleaning and converting data types
-pipeline = function(df){
-  # convert month to num
-  month_num = c()
-  for(i in 1:nrow(df)){
-    month_num = c(month_num,substr(df$recorded_date[i],1,1))
-  }
+pipeline = function(df,y_exists=TRUE){
   # Don't need recorded date -> year and month.name suffice
   df = tibble(subset(df, select = -c(recorded_date) ))
-  df$eth_num = ethinicity_num_conv(df$observed_ethnicity)
+  df$eth_rep = ethinicity_reported(df$observed_ethnicity)
   df$shooting = as.integer(df$method_of_killing=='Shooting')
-  # binarize
-  df = binarize(df=df, col='solved_status', set_to_one='Solved')
-  df = binarize_2(df=df, col='sex', set_to_one='Male')
-  df = binarize_2(df=df, col='domestic_abuse', set_to_one='Domestic Abuse')
-  # convert age to num
-  df$age_group_numeric = as.numeric(factor(df$age_group))
+  # binarize the solved status
+  if(y_exists){
+    df = binarize(df=df, col='solved_status', set_to_one='Solved', other_encoding=0)
+  }
+  df = binarize(df=df, col='sex', set_to_one='Male', other_encoding=-1)
+  df = binarize(df=df, col='domestic_abuse', set_to_one='Domestic Abuse', other_encoding=-1)
   return(df)
 }
 
@@ -112,7 +93,7 @@ The model for logistic regression dows not bear any $\theta$ parameter, so I wil
 
 
 $$
-\eta_j = b_0 + b_1 x_{1j}+b_2 x_{2j}+b_3x_{3j}+b_1x_{4j} + \beta_0 + \beta_1x_{1j}+\beta_2x_{2j}+\beta_3x_{3j}+\beta_1x_{4j}
+\eta_j = b_0 + b_1 x_{1j}+b_2 x_{2j}+b_3x_{3j}+b_1x_{4j} + \beta_0 + \beta_1x_{1j}+\beta_2x_{2j}+\beta_3x_{3j}
 $$
 
 $$
@@ -121,12 +102,12 @@ $$
 $$
 \pi(b,\Sigma)
 $$
-Some factors that seem likely to influence the target variable can be sex, domestic abuse and whether the homicide was gun-related or not.
+Some factors that seem likely to influence the target variable can be sex, domestic abuse and whether the homicide was gun-related or not. I am also including whether ethnicity was reported or not, but I may take it out later.
 
-## Justification for Priors
+**Justification for Priors**
+Here, I will sequentially look at setting the priors for the model.
 
 **Intercept prior**
-
 I look at the data to judge the level/ average rate of solving homicides, which is around 0.89. Opting for something weakly informative is advisable as there is no weight of literature behind setting these priors. As a result, choosing an intercept prior that is allowed to reach 0.89 (when put through the inverse logit function) as an extreme observation (~2 s.d.) can be reasonable. Thus, a normal distribution with mean $0$ can be allowed to have 2 s.d. = $logit(0.8944)=~2.137$. The following prior seems appropriate
 $$\mathcal{N}(0,1.2)$$
 This yields a 2 s.d of ~2.19.
@@ -134,10 +115,10 @@ This yields a 2 s.d of ~2.19.
 The following are all originally categorical variables encoded as 1 and 0. Their priors will be similar to each other and different from the intercept prior.
 
 **Sex prior**
-As males are encoded as 1 and females are encoded as 0, a coefficient that is allowed to vary till 0.5 can be appropriate. Considering the intercept, this will roughly yield somewhere around $g^{-1}(2.19+0.5*1)=0.93$ and $g^{-1}(2.19-0.5*1)=0.84$, which is within bounds I would expect. Hence, following the same calculation as above, I choose a prior of $$\mathcal{N}(0,0.625)$$
+Males are encoded as 1 and females are encoded as -1. Considering the intercept, a coefficient that is allowed to vary till 0.5 will roughly yield somewhere around $g^{-1}(2.19+0.5*1)=0.93$ and $g^{-1}(2.19-0.5*1)=0.84$, which is within bounds I would expect. Hence, following the same calculation as above, I choose a prior of $$\mathcal{N}(0,0.0625)$$
 
 **Domestic abuse prior**
-With domestic abuse, I hypothesize that it is 'easier' to find the perpetrator. Living in the same household must greatly narrow down the search. That being said, I would not be comfortable with placing a very wide prior on the coefficient, as it can potentially take the response variable to above 0.99 chance of being solved - that seems unreasonable. Looking at the data, it appears that domestic abuse cases get solved ~96% of the time. $g(0.96)=3.18$. Considering the intercept of around 2.19, I can hit the maximum value of domestic abuse variable (i.e. 1) with ~0.98. Let's round that to 1 so that the distribution is allowed to go up to 1 roughly 95% of the time (i.e. ~2 s.d.)
+When domestic abuse is involved in the homicide, I hypothesize that it is 'easier' to find the perpetrator. Living in the same household must greatly narrow down the search. That being said, I would not be comfortable with placing a very wide prior on the coefficient, as it can potentially take the response variable to above 0.99 chance of being solved - that seems unreasonable. Looking at the data, it appears that domestic abuse cases get solved ~96% of the time. $g(0.96)=3.18$. Considering the intercept of around 2.19, that is an increment of ~0.987. Let's round that to 1 so that the distribution is allowed to go up to 1 roughly 95% of the time (i.e. ~2 s.d.)
 This lands us with a prior 
 $$\mathcal{N}(0,0.25)$$
 
@@ -146,6 +127,8 @@ It can be reasoned that shootings make it relatively harder to solve the case as
 
 As for the prior, I can believe the probability of solving slips down to ~75% if the crime was gun-related. In this scenario, $2.19-g^{-1}(0.75)=1.1$, i.e. the prior should be allowed to reach 1.3 in the 95th percentile (of its distribution). Therefore, $s.d. = \frac{1.1}{2}=0.55$. The prior is thus
 $$\mathcal{N}(0,0.3025)$$
+**Group priors:**
+
 Priors for standard deviation of $\beta_j$ are next. Left alone, Stan would revert to a half-student_t(3, 0, 2.5). This can seem a little too wide. Suppose, for the intercept, which is already around 2.19, having a s.d. on top of that, reaching upto $\sqrt{2.5}*2=3.16$ would mean passing ~$2.19+3.16$ through the inverse logit function, bringing it very near to 1 (albeit this would be a highly improbable scenario). I would like to keep the s.d. priors tight around their original $b$ priors. A zero-mean normal distribution with small variance (~0.1) for the b priors and slightly larger (~0.5) for Intercept prior sounds plausible.
 
 $$
@@ -155,37 +138,205 @@ $$
 ```{r}
 # Set priors
 intercept_prior = set_prior('normal(0,1.2)',class='Intercept')
-sex_prior = set_prior('normal(0,0.625)',class='b',coef='sex')
+sex_prior = set_prior('normal(0,0.0625)',class='b',coef='sex')
 abuse_prior = set_prior('normal(0,0.4225)',class='b',coef='domestic_abuse')
 shooting_prior = set_prior('normal(0,0.3025)',class='b',coef='shooting')
 
-sd_priors_I <- set_prior("normal(0,0.5)",class="sd", group="observed_ethnicity", coef="Intercept")
-sd_priors <- set_prior("normal(0,0.01)",class="sd", group="observed_ethnicity")
+sd_priors_I <- set_prior("normal(0,0.5)",class="sd", group="season", coef='Intercept')
+sd_priors <- set_prior("normal(0,0.1)",class="sd", group="season", coef = c('sex','domestic_abuse','shooting'))
 
 # Join priors into a vector
 my_prior = c(intercept_prior,sex_prior,abuse_prior,shooting_prior,sd_priors_I, sd_priors)
 
-fit_1 = brm(solved_status~sex+domestic_abuse+shooting
-            +(shooting+domestic_abuse|observed_ethnicity),
+fit_1 = brm(solved_status~sex+domestic_abuse+shooting+eth_rep
+            +(sex+domestic_abuse+shooting|season),
           data=homicides_1,
           family=bernoulli,
           prior=my_prior,
           refresh=0)
+```
+Trace plots are examined.
+```{r}
+mcmc_plot(fit_1 , type='trace')
+mcmc_plot(fit_1 , type='hist')
+```
+The traceplots suggest that convergence has been reached. To judge whether model has adequately fit the data, I will use it to predict over unseen data (the 5 years of data stowed away at the beginning).
 
+```{r}
+# Validation (taken from MTHM508 Pima Indians lectures)
+ConfusionMatrix <- function(Classifier, Truth){
+  if(!(length(Classifier)==length(Truth)))
+    stop("Make the length of your vector of predictions the same as the length of the truth")
+  if(is.logical(Classifier))
+    Classifier <- as.integer(Classifier)
+  WhichClass0s <- which(Classifier < 1)
+  ZeroCompare <- Truth[WhichClass0s]
+  Predicted0 <- c(length(ZeroCompare)-sum(ZeroCompare), sum(ZeroCompare))
+  WhichClass1s <- which(Classifier>0)
+  OnesCompare <- Truth[WhichClass1s]
+  Predicted1 <- c(length(OnesCompare)-sum(OnesCompare), sum(OnesCompare))
+  ConMatrix <- cbind(Predicted0,Predicted1)
+  row.names(ConMatrix) <- c("Actual Negative", "Actual Positive")
+  colnames(ConMatrix) <- c("Pred Negative", "Pred Positive")
+  return (ConMatrix)
+}
+
+preds <- predict(fit_1, newdata=homicides_2)
+```
+The threshold can be iteratively changed to see which yields the best confusion matrix (with least Type-1 and Type-2 errors).
+```{r}
+hist(preds[,"Estimate"],breaks=200)
+```
+I will keep the threshold at 0.89. This yields an accuracy of ~82%
+```{r}
+# Use a sensible threshold value
+a_classifier <- preds[,"Estimate"]>=0.89
+conmat <- ConfusionMatrix(a_classifier, as.integer(homicides_2$solved_status==1))
+conmat
+sum(diag(conmat))/sum(conmat)
+```
+#### Critical Evaluation of model performance
+
+Since there are 1904 solved cases amidst the 2130 recorded homicides, having a 'dumb' classifier predict every crime as 'solved' would lead to ~89% accuracy over the dataset. The fitted model does not achieve that accuracy level. However, one thing it is being able to do is correctly classify at least some of the cases which were not actually solved.
+
+### 2. Use your model to infer how the features of any particular homicide in London affect the probability that the case has been solved (to date).
+
+Looking at the summary of the fit, I can deduce the following:
+```{r}
 summary(fit_1)
 ```
-The eth_num variable does not seem to have a stable effect on the model. It will be discarded it in the next run. Trace plots are examined.
+The sex of the victim as well as whether the crime was gun-related or not significantly contribute to lowering the chance of the crime being solved. Recall that sex is encoded as 1 or male and -1 for female. Similarly, shooting is encoded as 1 for death by shooting and -1 for death by other methods. A negative coefficient for sex is saying that a crime is more likely to be solved if the victim is a woman. For shooting, the negative coefficient backs up our earlier hypothesis of shooters being relatively more difficult to track down. A decently high positive coefficient on domestic abuse points towards crimes having a higher probability of being solved if it was committed by someone who knew the victim personally or lived in the same household. I think this makes sense as it would cut down on a lot of guesswork for law enforcement and narrow the search to a few possible suspects.
+
+Investigate the group level effects.
 ```{r}
-plot(fit_1,ask=FALSE)
+ranef(fit_1)
 ```
-It appears that convergence has been reached.
+The only noticeable deviations from the population means I can see is for the Intercept, which goes to say that murders happening in summer have a slightly higher chance of being solved. I reserve commenting on crimes in spring, autumn and winter, because even if it looks like they have slightly lower probability of being solved, their distribution is placed pretty evenly on both sides of 0. I am not sure of whether this effect actually exists or not. Checking the posterior samples will help narrow down those covariates that may actually have an effect on the response variable.
+```{r}
+samples = as_draws_df(fit_1)
+eth_rep_samples = samples$b_eth_rep
+sum(eth_rep_samples<0)/length(eth_rep_samples)
+```
+This says that there is ~40% chance that the mean effect of reported ethnicity is of the wrong sign - this is not reliable. **We will remove it from our model.** Before that, let's check a few other posterior samples.
 
 ```{r}
-get_prior(solved_status~sex+domestic_abuse+shooting
-            +(shooting+domestic_abuse|observed_ethnicity),
+# Probability that the effect of shooting is actually positive
+shooting_samples = samples$b_shooting
+sum(shooting_samples>0)/length(shooting_samples)
+# Probability that the effect of abuse is actually negative
+abuse_samples = samples$b_domestic_abuse
+sum(abuse_samples<0)/length(abuse_samples)
+# Probability that the effect of being male is actually positive
+sex_samples = samples$b_sex
+sum(sex_samples>0)/length(sex_samples)
+```
+```{r}
+for(c in colnames(samples[,16:31])){# ranef posteriors begin at 16 and end at 31
+  r_posterior = samples[c]
+  gt_zero = sum(r_posterior>0)/nrow(r_posterior) 
+  print(paste(c , "proba of >0", gt_zero , ", proba of <=0", 1 - gt_zero))
+}
+```
+
+From this, it is clear that shooting, sex and domestic abuse have a significant effect on the response variable. Looking at the random effects, none of the covariates are that effected across different seasons (apart from Intercept which increases in summer, i.e. there is ~20% chance of there not acutally being an increase, which is far less than the other group effects). A second model can be fit by removing eth_rep and grouping on something other than season. I pick observed_ethnicity as it seems like there may be group-wise variability in how 'solvable' a homicide will be. I don't believe sex, domestic abuse or shooting will be much affected, hence I will remove them from grouped effects.
+
+```{r}
+sd_priors_I <- set_prior("normal(0,0.5)",class="sd", group="observed_ethnicity", coef='Intercept')
+# Join priors into a vector
+my_prior = c(intercept_prior,sex_prior,abuse_prior,shooting_prior,sd_priors_I)
+
+fit_2 = brm(solved_status~sex+domestic_abuse+shooting
+            +(1|observed_ethnicity),
           data=homicides_1,
           family=bernoulli,
-          prior=my_prior,)
+          prior=my_prior,
+          refresh=0,
+          iter=2000)
 ```
+Assess convergence
+```{r}
+mcmc_plot(fit_2 , type='trace')
+mcmc_plot(fit_2 , type='hist')
+```
+```{r}
+summ = summary(fit_2)
+# store the min bulk ess - will need it later for monte carlo estimation
+n_eff = as.integer(min(summ$fixed$Bulk_ESS))
+# Show summary
+summ
+```
+```{r}
+ranef(fit_2)
+```
+Check if the population effects are significant or not.
+```{r}
+samples = as_draws_df(fit_2)
+# Probability that the effect of shooting is actually positive
+shooting_samples = samples$b_shooting
+sum(shooting_samples>0)/length(shooting_samples)
+# Probability that the effect of abuse is actually negative
+abuse_samples = samples$b_domestic_abuse
+sum(abuse_samples<0)/length(abuse_samples)
+# Probability that the effect of being male is actually positive
+sex_samples = samples$b_sex
+sum(sex_samples>0)/length(sex_samples)
+```
+Check if group effects are significant or not. It appears that the victim being White significantly increases the chance of the homicide being solved (only ~15% chance that the sign of this effect is actuallyy negative). The rest are quite indecisive.
+```{r}
+for(c in colnames(samples[,6:10])){# ranef posteriors begin at 16 and end at 31
+  r_posterior = samples[c]
+  gt_zero = sum(r_posterior>0)/nrow(r_posterior) 
+  print(paste(c , "proba of >0", gt_zero , ", proba of <=0", 1 - gt_zero))
+}
+```
+```{r}
+preds <- predict(fit_2, newdata=homicides_2)
+hist(preds[,"Estimate"],breaks=200)
+```
+I will keep the threshold at 0.89. This yields an accuracy of ~82%
+```{r}
+# Use a sensible threshold value
+a_classifier <- preds[,"Estimate"]>=0.89
+conmat <- ConfusionMatrix(a_classifier, as.integer(homicides_2$solved_status==1))
+conmat
+sum(diag(conmat))/sum(conmat)
+```
+This model is the one I will stick with.
 
+### 3. The following block of code will generate 2 “hypothetical homicides” during the year after March (when the data officially ends).
+
+
+```{r}
+curated_cols <- c("recorded_date","age_group","sex","observed_ethnicity","domestic_abuse",
+"borough","method_of_killing")
+new_dates <- as.Date(c("2022-04-01", "2022-05-01", "2022-06-01",
+"2022-07-01", "2022-08-01", "2022-09-01",
+"2022-10-01", "2022-11-01", "2022-12-01"))
+curated_homs <- dplyr::select(homicides, all_of(curated_cols))
+hypothetical_homicides <- tibble(recorded_date = sample(new_dates, 2, TRUE))
+month_tibble <- read.csv("month_tibble.csv")
+month_tibble$recorded_date <- as.Date(month_tibble$recorded_date)
+for(i in 2:length(names(curated_homs))){
+hypothetical_homicides <- cbind(hypothetical_homicides,
+sample(as.vector(unlist(unique(curated_homs[,i]))),2,TRUE))
+}
+names(hypothetical_homicides) <- names(curated_homs)
+hypothetical_homicides <- as_tibble(hypothetical_homicides) %>%
+left_join(month_tibble, by = "recorded_date")
+head(hypothetical_homicides, n=2)
+```
+```{r}
+homicides_3 = pipeline(hypothetical_homicides,y_exists=FALSE)
+preds = data.frame(predict(fit_2, newdata=homicides_3, summary=FALSE))
+names(preds) = c('hom_A','hom_B')
+preds$A_not_B = as.integer((preds$hom_A==1)&(preds$hom_B==0))
+
+# Monte Carlo Estimate
+phat = sum(preds$A_not_B)/length(preds$A_not_B)
+# MC error
+MCerror = sqrt(phat*(1-phat))/n_eff
+
+print(paste('The MC estimate is', round(phat, 6), 'and the MC error is' ,round(MCerror , 6)))
+print(paste('(',round(phat-1.96*MCerror , 6), ',',round(phat+1.96*MCerror , 6),') is a 95% C.I'))
+```
 
