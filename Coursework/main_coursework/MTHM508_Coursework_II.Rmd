@@ -7,7 +7,7 @@ date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warnings = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 
 ####  1. Present a single Bayesian analysis consisting of a hierarchical model, fit using brms, for the event that a particular homicide is solved given the values of the relevant covariates in this data set.
@@ -48,7 +48,7 @@ binarize = function(df,col,set_to_one,other_encoding){
   df[col]=ifelse(df[col]==set_to_one,1,other_encoding)
   return(df)
 }
-# capture if ethnicity has been reported (modififed from  MTHM508 Pima Indians lectures)
+# capture if ethnicity has been reported (modified from MTHM508 Pima Indians lectures)
 ethinicity_reported = function(vec){
   ans <- as.character(vec)
   for(i in 1:length(vec)){
@@ -65,14 +65,15 @@ ethinicity_reported = function(vec){
 pipeline = function(df,y_exists=TRUE){
   # Don't need recorded date -> year and month.name suffice
   df = tibble(subset(df, select = -c(recorded_date) ))
+  # make a var denoting if ethnicity has beeen captured
   df$eth_rep = ethinicity_reported(df$observed_ethnicity)
   df$shooting = as.integer(df$method_of_killing=='Shooting')
+  df = binarize(df=df, col='sex', set_to_one='Male', other_encoding=-1)
+  df = binarize(df=df, col='domestic_abuse', set_to_one='Domestic Abuse', other_encoding=-1)
   # binarize the solved status
   if(y_exists){
     df = binarize(df=df, col='solved_status', set_to_one='Solved', other_encoding=0)
   }
-  df = binarize(df=df, col='sex', set_to_one='Male', other_encoding=-1)
-  df = binarize(df=df, col='domestic_abuse', set_to_one='Domestic Abuse', other_encoding=-1)
   return(df)
 }
 
@@ -89,21 +90,20 @@ $$
 y_{ij}|\eta_{ij},\theta \sim \mathcal{D}(g^{-1}(\eta_{ij}),\theta)
 $$
 where $g$ is the 'link function'. In this case, it is the $logit$ function, such that $g^{-1}(\eta)=\frac{1}{1+e^{-\eta}}$
-The model for logistic regression dows not bear any $\theta$ parameter, so I will not use it going forward.
+The model for logistic regression dows not bear any $\theta$ parameter, so I will not use it going forward. Therefore, our model is described by a bernoulli distribution with mean $\frac{1}{1+e^{-\eta}}$
 
+Some factors that seem likely to influence the target variable can be sex, domestic abuse and whether the homicide was gun-related or not. I am also including whether ethnicity was reported or not, but I may take it out later.
 
 $$
-\eta_j = b_0 + b_1 x_{1j}+b_2 x_{2j}+b_3x_{3j}+b_1x_{4j} + \beta_0 + \beta_1x_{1j}+\beta_2x_{2j}+\beta_3x_{3j}
+\eta_j = b_0 + b_{sex} x_{1j}+b_{abuse} x_{2j}+b_{shooting} x_{3j}+b_{eth} x_{4j} + \beta_0 + \beta_{sex} x_{1j}+\beta_{abuse} x_{2j}+\beta_{shooting} x_{3j}
 $$
-
+$b_0$ and $\beta_0$ signify population and group intercepts.
 $$
 \beta_j \sim \mathcal{N}(0,\Sigma)
 $$
 $$
 \pi(b,\Sigma)
 $$
-Some factors that seem likely to influence the target variable can be sex, domestic abuse and whether the homicide was gun-related or not. I am also including whether ethnicity was reported or not, but I may take it out later.
-
 **Justification for Priors**
 Here, I will sequentially look at setting the priors for the model.
 
@@ -134,7 +134,6 @@ Priors for standard deviation of $\beta_j$ are next. Left alone, Stan would reve
 $$
 \mathcal{N}(0,0.1) \ ; \ \mathcal{N}(0,0.5)
 $$
-
 ```{r}
 # Set priors
 intercept_prior = set_prior('normal(0,1.2)',class='Intercept')
@@ -157,8 +156,11 @@ fit_1 = brm(solved_status~sex+domestic_abuse+shooting+eth_rep
 ```
 Trace plots are examined.
 ```{r}
-mcmc_plot(fit_1 , type='trace')
-mcmc_plot(fit_1 , type='hist')
+mcmc_plot(fit_1 , type='trace', variable ='^b_', regex=TRUE)
+mcmc_plot(fit_1 , type='trace', variable ='^sd_', regex=TRUE)
+
+mcmc_plot(fit_1 , type='hist', variable ='^b_', regex=TRUE)
+mcmc_plot(fit_1 , type='hist', variable ='^sd_', regex=TRUE)
 ```
 The traceplots suggest that convergence has been reached. To judge whether model has adequately fit the data, I will use it to predict over unseen data (the 5 years of data stowed away at the beginning).
 
@@ -205,20 +207,19 @@ Looking at the summary of the fit, I can deduce the following:
 ```{r}
 summary(fit_1)
 ```
-The sex of the victim as well as whether the crime was gun-related or not significantly contribute to lowering the chance of the crime being solved. Recall that sex is encoded as 1 or male and -1 for female. Similarly, shooting is encoded as 1 for death by shooting and -1 for death by other methods. A negative coefficient for sex is saying that a crime is more likely to be solved if the victim is a woman. For shooting, the negative coefficient backs up our earlier hypothesis of shooters being relatively more difficult to track down. A decently high positive coefficient on domestic abuse points towards crimes having a higher probability of being solved if it was committed by someone who knew the victim personally or lived in the same household. I think this makes sense as it would cut down on a lot of guesswork for law enforcement and narrow the search to a few possible suspects.
+Domestic abuse and shooting play heavily into whether the crime will be solved. The sex of the victim as well as whether ethnicity was reported or not contribute to the model, albeit to a lesser extent (coefficients closer to 0). Recall that sex is encoded as 1 or male and -1 for female. Similarly, shooting is encoded as 1 for death by shooting and -1 for death by other methods. A negative coefficient for sex is saying that a crime is more likely to be solved if the victim is a woman. For shooting, the negative coefficient backs up our earlier hypothesis of shooters being relatively more difficult to track down. A decently high positive coefficient on domestic abuse points towards crimes having a higher probability of being solved if it was committed by someone who knew the victim personally or lived in the same household. I think this makes sense as it would cut down on a lot of guesswork for law enforcement and narrow the search to a few possible suspects. The ethnicity being reported increases chances of the case being solved - if I think about it, this makes sense as a missing (or unreported) ethnicity may point towards there being problems in the paperwork, indicating the case may take longer to solve.
 
 Investigate the group level effects.
 ```{r}
 ranef(fit_1)
 ```
-The only noticeable deviations from the population means I can see is for the Intercept, which goes to say that murders happening in summer have a slightly higher chance of being solved. I reserve commenting on crimes in spring, autumn and winter, because even if it looks like they have slightly lower probability of being solved, their distribution is placed pretty evenly on both sides of 0. I am not sure of whether this effect actually exists or not. Checking the posterior samples will help narrow down those covariates that may actually have an effect on the response variable.
+The only noticeable deviations from the population means I can see is for the Intercept, which goes to say that murders happening in summer have a slightly higher chance of being solved. I reserve commenting on crimes in spring, autumn and winter, because even if it looks like they have slightly lower probability of being solved (their distribution is placed pretty evenly on both sides of 0). I am not sure of whether this effect actually exists or not. Checking the posterior samples will help narrow down those covariates that may actually have an effect on the response variable.
 ```{r}
 samples = as_draws_df(fit_1)
 eth_rep_samples = samples$b_eth_rep
 sum(eth_rep_samples<0)/length(eth_rep_samples)
 ```
-This says that there is ~40% chance that the mean effect of reported ethnicity is of the wrong sign - this is not reliable. **We will remove it from our model.** Before that, let's check a few other posterior samples.
-
+This says that there is ~40% chance that the mean effect of reported ethnicity is of the wrong sign - this is not reliable. **I will remove it from our model.** Before that, let's check a few other posterior samples. From this, it is clear that shooting, sex and domestic abuse have a significant effect on the response variable.
 ```{r}
 # Probability that the effect of shooting is actually positive
 shooting_samples = samples$b_shooting
@@ -237,16 +238,30 @@ for(c in colnames(samples[,16:31])){# ranef posteriors begin at 16 and end at 31
   print(paste(c , "proba of >0", gt_zero , ", proba of <=0", 1 - gt_zero))
 }
 ```
+Looking at the random effects, none of the covariates are that affected across different seasons (apart from Intercept which increases in summer, i.e. there is ~23% chance of there not acutally being an increase, which is far less than the other group effects). 
 
-From this, it is clear that shooting, sex and domestic abuse have a significant effect on the response variable. Looking at the random effects, none of the covariates are that effected across different seasons (apart from Intercept which increases in summer, i.e. there is ~20% chance of there not acutally being an increase, which is far less than the other group effects). A second model can be fit by removing eth_rep and grouping on something other than season. I pick observed_ethnicity as it seems like there may be group-wise variability in how 'solvable' a homicide will be. I don't believe sex, domestic abuse or shooting will be much affected, hence I will remove them from grouped effects.
+**Model Checking - Refit**
+A second model can be fit by removing eth_rep and grouping on something other than season. I pick observed_ethnicity as it seems like there may be group-wise variability in how 'solvable' a homicide will be.
+$$
+\eta_j = b_0 + b_{sex} x_{1j}+b_{abuse} x_{2j}+b_{shooting} x_{3j} + \beta_0 + \beta_{sex} x_{1j}+\beta_{abuse} x_{2j}+\beta_{shooting} x_{3j}
+$$
+$b_0$ and $\beta_0$ signify population and group intercepts (grouped on observed_ethnicity).
+$$
+\beta_j \sim \mathcal{N}(0,\Sigma)
+$$
+$$
+\pi(b,\Sigma)
+$$
+
 
 ```{r}
 sd_priors_I <- set_prior("normal(0,0.5)",class="sd", group="observed_ethnicity", coef='Intercept')
+sd_priors <- set_prior("normal(0,0.1)",class="sd", group="observed_ethnicity", coef = c('sex','domestic_abuse','shooting'))
 # Join priors into a vector
-my_prior = c(intercept_prior,sex_prior,abuse_prior,shooting_prior,sd_priors_I)
+my_prior = c(intercept_prior,sex_prior,abuse_prior,shooting_prior,sd_priors_I,sd_priors)
 
 fit_2 = brm(solved_status~sex+domestic_abuse+shooting
-            +(1|observed_ethnicity),
+            +(sex+domestic_abuse+shooting|observed_ethnicity),
           data=homicides_1,
           family=bernoulli,
           prior=my_prior,
@@ -255,8 +270,11 @@ fit_2 = brm(solved_status~sex+domestic_abuse+shooting
 ```
 Assess convergence
 ```{r}
-mcmc_plot(fit_2 , type='trace')
-mcmc_plot(fit_2 , type='hist')
+mcmc_plot(fit_2 , type='trace', variable ='^b_', regex=TRUE)
+mcmc_plot(fit_2 , type='trace', variable ='^sd_', regex=TRUE)
+
+mcmc_plot(fit_2 , type='hist', variable ='^b_', regex=TRUE)
+mcmc_plot(fit_2 , type='hist', variable ='^sd_', regex=TRUE)
 ```
 ```{r}
 summ = summary(fit_2)
@@ -268,6 +286,8 @@ summ
 ```{r}
 ranef(fit_2)
 ```
+It appears that the victim being white increases the intercept, i.e. the base probability of the murder being solved. The other covariates do not seem to be affected much by this grouping. I observe that the Est. Error for the intercept has decreased, denoting that some of the variance has been explained away by the differences in ethnicity.This also suggests that this is a better grouping than the previous one.
+
 Check if the population effects are significant or not.
 ```{r}
 samples = as_draws_df(fit_2)
@@ -281,9 +301,9 @@ sum(abuse_samples<0)/length(abuse_samples)
 sex_samples = samples$b_sex
 sum(sex_samples>0)/length(sex_samples)
 ```
-Check if group effects are significant or not. It appears that the victim being White significantly increases the chance of the homicide being solved (only ~15% chance that the sign of this effect is actuallyy negative). The rest are quite indecisive.
+Check if group effects are significant or not. The probability of the intercept being greater than 0 when the victim is white is over 80% - this suggests that it is likely a real effect.The case is more probable to be solved if the victim is white. This confirms a previous argument. 
 ```{r}
-for(c in colnames(samples[,6:10])){# ranef posteriors begin at 16 and end at 31
+for(c in colnames(samples[,15:34])){# ranef posteriors begin at 16 and end at 31
   r_posterior = samples[c]
   gt_zero = sum(r_posterior>0)/nrow(r_posterior) 
   print(paste(c , "proba of >0", gt_zero , ", proba of <=0", 1 - gt_zero))
